@@ -37,11 +37,14 @@
         <div><small>Total</small><span id="totalScore">0</span></div>
         <div><small>Shape</small><span id="shapeName">Circle</span></div>
       </div>
-      <div class="preview"><canvas id="preview" width="56" height="56"></canvas></div>
+      <div class="preview"><canvas id="preview"></canvas></div>
     </div>
 
     <div class="board">
-      <canvas id="draw" width="520" height="520"></canvas>
+<canvas id="draw"></canvas>
+    
+    
+    
     </div>
 
     <div class="btns">
@@ -59,6 +62,57 @@
   </div>
 
 <script>
+
+  // --- HiDPI / DPR-aware sizing ---
+function fitHiDPICanvas(c, ctx) {
+  const dpr = window.devicePixelRatio || 1;
+  // Use rendered (CSS) size as the target logical size
+  const cssW = Math.max(1, Math.floor(c.clientWidth));
+  const cssH = Math.max(1, Math.floor(c.clientHeight));
+  // Set the backing store size in device pixels
+  c.width  = Math.round(cssW * dpr);
+  c.height = Math.round(cssH * dpr);
+  // Scale drawing so 1 unit = 1 CSS pixel
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { cssW, cssH, dpr };
+}
+
+  function resizeAll() {
+  // Main draw canvas fills the board container
+  const board = document.querySelector('.board');
+  // Make the canvas a square that fits the board width
+  const cssSize = Math.floor(board.clientWidth);
+  canvas.style.width = cssSize + 'px';
+  canvas.style.height = cssSize + 'px';
+
+  // Preview canvas fixed CSS size (square)
+  const prevSize = 56;
+  prevCanvas.style.width = prevSize + 'px';
+  prevCanvas.style.height = prevSize + 'px';
+
+  // Apply HiDPI scaling
+  fitHiDPICanvas(canvas, ctx);
+  fitHiDPICanvas(prevCanvas, pctx);
+
+  // Update boardBox with new logical (CSS pixel) sizes
+  const PAD = 24;
+  boardBox.minX = PAD;
+  boardBox.minY = PAD;
+  boardBox.maxX = canvas.clientWidth - PAD;
+  boardBox.maxY = canvas.clientHeight - PAD;
+  boardBox.w = boardBox.maxX - boardBox.minX;
+  boardBox.h = boardBox.maxY - boardBox.minY;
+
+  // Redraw guides / preview for current shape
+  clearCanvas();
+  renderTargetPreview();
+}
+
+window.addEventListener('resize', resizeAll);
+window.addEventListener('orientationchange', resizeAll);
+
+
+  
 (function(){
   "use strict";
 
@@ -205,6 +259,11 @@
   var drawing = false;
   var stroke = [];
 
+
+  resizeAll();
+pickOrder();
+
+  
   // ---------- Flow ----------
   function pickOrder(){
     var pool = SHAPES.concat(SHAPES);
@@ -283,12 +342,13 @@
   }
 
   // ---------- Drawing ----------
-  function getPos(e){
-    var rect = canvas.getBoundingClientRect();
-    var cx = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
-    var cy = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
-    return {x:cx, y:cy};
-  }
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return { x, y };
+}
+
   function startDraw(e){
     if(e) e.preventDefault();
     drawing=true; stroke=[];
