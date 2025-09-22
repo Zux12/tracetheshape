@@ -182,7 +182,14 @@
   const restartBtn = document.getElementById('restartBtn');
 
   const PAD = 24;
-  const boardBox = {minX:PAD, minY:PAD, maxX:canvas.width-PAD, maxY:canvas.height-PAD, get w(){return this.maxX-this.minX}, get h(){return this.maxY-this.minY}};
+  const boardBox = {
+  minX: PAD,
+  minY: PAD,
+  maxX: canvas.width - PAD,
+  maxY: canvas.height - PAD,
+  w: (canvas.width - PAD) - PAD,
+  h: (canvas.height - PAD) - PAD
+};
 
   let rounds = 5;
   let order = [];
@@ -240,7 +247,14 @@
 
   function renderTargetPreview(){
     pctx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
-    const bb = {minX:4,minY:4,maxX:prevCanvas.width-4,maxY:prevCanvas.height-4, get w(){return this.maxX-this.minX}, get h(){return this.maxY-this.minY}};
+const bb = {
+  minX: 4,
+  minY: 4,
+  maxX: prevCanvas.width - 4,
+  maxY: prevCanvas.height - 4,
+  w: (prevCanvas.width - 4) - 4,
+  h: (prevCanvas.height - 4) - 4
+};
     const pts = sampleShape(order[idx].gen, 140, bb);
     pctx.beginPath();
     for(let i=0;i<pts.length;i++){
