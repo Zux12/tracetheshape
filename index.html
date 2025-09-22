@@ -219,8 +219,11 @@
     boardBox.w = boardBox.maxX - boardBox.minX;
     boardBox.h = boardBox.maxY - boardBox.minY;
 
-    clearCanvas();
-    renderTargetPreview();
+if (order && order.length) {
+  clearCanvas();
+  renderTargetPreview();
+}
+
   }
 
   window.addEventListener('resize', resizeAll);
@@ -252,29 +255,31 @@
     shapeNameEl.textContent = order[idx].name;
   }
 
-  function clearCanvas(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    drawGuide();
-  }
+function clearCanvas(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if (order && order.length) drawGuide();
+}
 
-  function drawGuide(){
-    ctx.save();
-    ctx.lineWidth=1;
-    ctx.strokeStyle='#1f2a44';
-    ctx.strokeRect(boardBox.minX,boardBox.minY,boardBox.w,boardBox.h);
+function drawGuide(){
+  if (!order || !order.length || !order[idx] || !order[idx].gen) return;
+  ctx.save();
+  ctx.lineWidth=1;
+  ctx.strokeStyle='#1f2a44';
+  ctx.strokeRect(boardBox.minX,boardBox.minY,boardBox.w,boardBox.h);
 
-    var pts = sampleShape(order[idx].gen, 240, boardBox);
-    ctx.beginPath();
-    for(var i=0;i<pts.length;i++){
-      var p=pts[i];
-      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
-    }
-    ctx.closePath();
-    ctx.globalAlpha=0.15;
-    ctx.strokeStyle='white';
-    ctx.stroke();
-    ctx.restore();
+  var pts = sampleShape(order[idx].gen, 240, boardBox);
+  ctx.beginPath();
+  for(var i=0;i<pts.length;i++){
+    var p=pts[i];
+    if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
   }
+  ctx.closePath();
+  ctx.globalAlpha=0.15;
+  ctx.strokeStyle='white';
+  ctx.stroke();
+  ctx.restore();
+}
+
 
   function renderTargetPreview(){
     pctx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
