@@ -41,10 +41,7 @@
     </div>
 
     <div class="board">
-<canvas id="draw"></canvas>
-    
-    
-    
+      <canvas id="draw"></canvas>
     </div>
 
     <div class="btns">
@@ -62,67 +59,35 @@
   </div>
 
 <script>
-
-  // --- HiDPI / DPR-aware sizing ---
-function fitHiDPICanvas(c, ctx) {
-  const dpr = window.devicePixelRatio || 1;
-  // Use rendered (CSS) size as the target logical size
-  const cssW = Math.max(1, Math.floor(c.clientWidth));
-  const cssH = Math.max(1, Math.floor(c.clientHeight));
-  // Set the backing store size in device pixels
-  c.width  = Math.round(cssW * dpr);
-  c.height = Math.round(cssH * dpr);
-  // Scale drawing so 1 unit = 1 CSS pixel
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return { cssW, cssH, dpr };
-}
-
-  function resizeAll() {
-  // Main draw canvas fills the board container
-  const board = document.querySelector('.board');
-  // Make the canvas a square that fits the board width
-  const cssSize = Math.floor(board.clientWidth);
-  canvas.style.width = cssSize + 'px';
-  canvas.style.height = cssSize + 'px';
-
-  // Preview canvas fixed CSS size (square)
-  const prevSize = 56;
-  prevCanvas.style.width = prevSize + 'px';
-  prevCanvas.style.height = prevSize + 'px';
-
-  // Apply HiDPI scaling
-  fitHiDPICanvas(canvas, ctx);
-  fitHiDPICanvas(prevCanvas, pctx);
-
-  // Update boardBox with new logical (CSS pixel) sizes
-  const PAD = 24;
-  boardBox.minX = PAD;
-  boardBox.minY = PAD;
-  boardBox.maxX = canvas.clientWidth - PAD;
-  boardBox.maxY = canvas.clientHeight - PAD;
-  boardBox.w = boardBox.maxX - boardBox.minX;
-  boardBox.h = boardBox.maxY - boardBox.minY;
-
-  // Redraw guides / preview for current shape
-  clearCanvas();
-  renderTargetPreview();
-}
-
-window.addEventListener('resize', resizeAll);
-window.addEventListener('orientationchange', resizeAll);
-
-
-  
 (function(){
   "use strict";
 
-  // ---------- Utils ----------
+  // ===== DOM refs first =====
+  var canvas = document.getElementById('draw');
+  var ctx = canvas.getContext('2d');
+  var prevCanvas = document.getElementById('preview');
+  var pctx = prevCanvas.getContext('2d');
+
+  var roundEl = document.getElementById('round');
+  var lastScoreEl = document.getElementById('lastScore');
+  var totalScoreEl = document.getElementById('totalScore');
+  var shapeNameEl = document.getElementById('shapeName');
+  var toast = document.getElementById('toast');
+  var finalBox = document.getElementById('finalBox');
+  var finalScore = document.getElementById('finalScore');
+  var finalRank = document.getElementById('finalRank');
+  var clearBtn = document.getElementById('clearBtn');
+  var skipBtn = document.getElementById('skipBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  // Board box (filled during resize)
+  var boardBox = {minX:0,minY:0,maxX:0,maxY:0,w:0,h:0};
+
+  // ===== Utils =====
   function lerp(a,b,t){ return a + (b-a)*t; }
   function dist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx + dy*dy); }
   function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
-  function polylineLength(pts){
-    var s=0; for(var i=1;i<pts.length;i++) s+=dist(pts[i-1], pts[i]); return s;
-  }
+  function polylineLength(pts){ var s=0; for(var i=1;i<pts.length;i++) s+=dist(pts[i-1], pts[i]); return s; }
   function resample(pts, n){
     if(!n) n=200;
     if(pts.length<2) return pts.slice();
@@ -135,7 +100,7 @@ window.addEventListener('orientationchange', resizeAll);
         var t=(step-d)/seg;
         var np={x: lerp(a.x,b.x,t), y: lerp(a.y,b.y,t)};
         out.push(np);
-        pts.splice(i,0,np); // insert virtual
+        pts.splice(i,0,np);
         d=0; i++;
       } else { d+=seg; i++; }
     }
@@ -183,7 +148,7 @@ window.addEventListener('orientationchange', resizeAll);
     return sum/A.length;
   }
 
-  // ---------- Shapes (normalized 0..1) ----------
+  // ===== Shapes (normalized 0..1) =====
   function shapeCircle(t){ var a=2*Math.PI*t; return {x:0.5+0.42*Math.cos(a), y:0.5+0.42*Math.sin(a)}; }
   function shapeSquare(t){
     var p=t*4;
@@ -194,8 +159,7 @@ window.addEventListener('orientationchange', resizeAll);
   }
   function shapeTriangle(t){
     var A={x:0.5,y:0.08}, B={x:0.92,y:0.9}, C={x:0.08,y:0.9};
-    var perAB=0.34, perBC=0.33;
-    var u;
+    var perAB=0.34, perBC=0.33, u;
     if (t<perAB){ u=t/perAB; return {x: lerp(A.x,B.x,u), y: lerp(A.y,B.y,u)}; }
     if (t<perAB+perBC){ u=(t-perAB)/perBC; return {x: lerp(B.x,C.x,u), y: lerp(B.y,C.y,u)}; }
     u=(t-perAB-perBC)/(1-perAB-perBC); return {x: lerp(C.x,A.x,u), y: lerp(C.y,A.y,u)};
@@ -223,63 +187,64 @@ window.addEventListener('orientationchange', resizeAll);
     {name:"Heart", gen:shapeHeart}
   ];
 
-  // ---------- DOM ----------
-  var canvas = document.getElementById('draw');
-  var ctx = canvas.getContext('2d');
-  var prevCanvas = document.getElementById('preview');
-  var pctx = prevCanvas.getContext('2d');
+  // ===== HiDPI sizing =====
+  function fitHiDPICanvas(c, ctx) {
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = Math.max(1, Math.floor(c.clientWidth));
+    var cssH = Math.max(1, Math.floor(c.clientHeight));
+    c.width  = Math.round(cssW * dpr);
+    c.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 1 unit = 1 CSS pixel
+    return { cssW:cssW, cssH:cssH, dpr:dpr };
+  }
 
-  var roundEl = document.getElementById('round');
-  var lastScoreEl = document.getElementById('lastScore');
-  var totalScoreEl = document.getElementById('totalScore');
-  var shapeNameEl = document.getElementById('shapeName');
-  var toast = document.getElementById('toast');
-  var finalBox = document.getElementById('finalBox');
-  var finalScore = document.getElementById('finalScore');
-  var finalRank = document.getElementById('finalRank');
-  var clearBtn = document.getElementById('clearBtn');
-  var skipBtn = document.getElementById('skipBtn');
-  var restartBtn = document.getElementById('restartBtn');
+  function resizeAll() {
+    var board = document.querySelector('.board');
+    var cssSize = Math.floor(board.clientWidth);
+    canvas.style.width = cssSize + 'px';
+    canvas.style.height = cssSize + 'px';
 
-  var PAD = 24;
-  // Plain values, no getters
-  var boardBox = {
-    minX: PAD,
-    minY: PAD,
-    maxX: canvas.width - PAD,
-    maxY: canvas.height - PAD
-  };
-  boardBox.w = boardBox.maxX - boardBox.minX;
-  boardBox.h = boardBox.maxY - boardBox.minY;
+    var prevSize = 56;
+    prevCanvas.style.width = prevSize + 'px';
+    prevCanvas.style.height = prevSize + 'px';
 
-  var rounds = 5;
-  var order = [];
-  var idx = 0;
-  var total = 0;
-  var drawing = false;
-  var stroke = [];
+    fitHiDPICanvas(canvas, ctx);
+    fitHiDPICanvas(prevCanvas, pctx);
 
+    var PAD = 24;
+    boardBox.minX = PAD;
+    boardBox.minY = PAD;
+    boardBox.maxX = canvas.clientWidth - PAD;
+    boardBox.maxY = canvas.clientHeight - PAD;
+    boardBox.w = boardBox.maxX - boardBox.minX;
+    boardBox.h = boardBox.maxY - boardBox.minY;
 
-  resizeAll();
-pickOrder();
-
-  
-  // ---------- Flow ----------
-  function pickOrder(){
-    var pool = SHAPES.concat(SHAPES);
-    order = [];
-    for(var i=0;i<rounds;i++){
-      order.push( pool[Math.floor(Math.random()*pool.length)] );
-    }
-    idx=0; total=0;
-    lastScoreEl.textContent='–';
-    totalScoreEl.textContent='0';
-    finalBox.style.display='none';
-    restartBtn.style.display='none';
     clearCanvas();
-    renderHUD();
     renderTargetPreview();
-    drawGuide();
+  }
+
+  window.addEventListener('resize', resizeAll);
+  window.addEventListener('orientationchange', resizeAll);
+
+  // ===== Drawing / input =====
+  function getPos(e){
+    var rect = canvas.getBoundingClientRect();
+    var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x:x, y:y };
+  }
+
+  var rounds = 5, order = [], idx = 0, total = 0;
+  var drawing = false, stroke = [];
+
+  function sampleShape(gen, n, box){
+    var pts=new Array(n);
+    for(var i=0;i<n;i++){
+      var t=i/(n-1);
+      var p=gen(t);
+      pts[i]={ x: lerp(box.minX, box.maxX, p.x), y: lerp(box.minY, box.maxY, p.y) };
+    }
+    return pts;
   }
 
   function renderHUD(){
@@ -313,10 +278,7 @@ pickOrder();
 
   function renderTargetPreview(){
     pctx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
-    var bb = {
-      minX:4, minY:4,
-      maxX:prevCanvas.width-4, maxY:prevCanvas.height-4
-    };
+    var bb = { minX:4, minY:4, maxX:prevCanvas.width-4, maxY:prevCanvas.height-4 };
     bb.w = bb.maxX - bb.minX; bb.h = bb.maxY - bb.minY;
 
     var pts = sampleShape(order[idx].gen, 140, bb);
@@ -330,24 +292,6 @@ pickOrder();
     pctx.strokeStyle='#22d3ee';
     pctx.stroke();
   }
-
-  function sampleShape(gen, n, box){
-    var pts=new Array(n);
-    for(var i=0;i<n;i++){
-      var t=i/(n-1);
-      var p=gen(t);
-      pts[i]={ x: lerp(box.minX, box.maxX, p.x), y: lerp(box.minY, box.maxY, p.y) };
-    }
-    return pts;
-  }
-
-  // ---------- Drawing ----------
-function getPos(e){
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-  return { x, y };
-}
 
   function startDraw(e){
     if(e) e.preventDefault();
@@ -376,7 +320,7 @@ function getPos(e){
   canvas.addEventListener('touchmove', moveDraw, {passive:false});
   canvas.addEventListener('touchend', endDraw);
 
-  // ---------- Scoring ----------
+  // ===== Scoring =====
   function scoreAgainst(targetPts, userPtsRaw){
     if (userPtsRaw.length<8) return 0;
 
@@ -384,7 +328,7 @@ function getPos(e){
     var user = normalizeToBox(userRes, boardBox, 6);
 
     var avgD = nearestAvgDistance(targetPts, user);
-    var tol = Math.min(boardBox.w, boardBox.h) * 0.02;
+    var tol = Math.min(boardBox.w, boardBox.h) * 0.02; // 2% of board
     var coverage = Math.exp(-avgD / tol);
 
     var tLen = polylineLength(targetPts);
@@ -426,7 +370,24 @@ function getPos(e){
     toast.textContent = 'Game over! Nice doodles.';
   }
 
-  // ---------- Buttons ----------
+  // ===== Game flow =====
+  function pickOrder(){
+    var pool = SHAPES.concat(SHAPES); // allow repeats, more randomness
+    order = [];
+    for(var i=0;i<rounds;i++){
+      order.push( pool[Math.floor(Math.random()*pool.length)] );
+    }
+    idx=0; total=0;
+    lastScoreEl.textContent='–';
+    totalScoreEl.textContent='0';
+    finalBox.style.display='none';
+    restartBtn.style.display='none';
+    clearCanvas();
+    renderHUD();
+    renderTargetPreview();
+    drawGuide();
+  }
+
   clearBtn.onclick = function(){ stroke=[]; clearCanvas(); toast.textContent='Cleared. Draw again.'; };
   skipBtn.onclick = function(){
     lastScoreEl.textContent='0';
@@ -436,10 +397,17 @@ function getPos(e){
   };
   restartBtn.onclick = function(){ pickOrder(); toast.textContent='New game. Draw the shape shown!'; };
 
-  // ---------- Boot ----------
-  pickOrder();
+  // ===== Boot after DOM ready =====
+  function boot(){
+    resizeAll();   // ensures canvas size + DPR scale
+    pickOrder();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })();
 </script>
-
 </body>
 </html>
