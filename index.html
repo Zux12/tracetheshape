@@ -188,15 +188,17 @@
   ];
 
   // ===== HiDPI sizing =====
-  function fitHiDPICanvas(c, ctx) {
-    var dpr = window.devicePixelRatio || 1;
-    var cssW = Math.max(1, Math.floor(c.clientWidth));
-    var cssH = Math.max(1, Math.floor(c.clientHeight));
-    c.width  = Math.round(cssW * dpr);
-    c.height = Math.round(cssH * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 1 unit = 1 CSS pixel
-    return { cssW:cssW, cssH:cssH, dpr:dpr };
-  }
+function fitHiDPICanvas(c, ctx) {
+  var dpr = window.devicePixelRatio || 1;
+  var cssW = Math.max(1, Math.floor(c.clientWidth));
+  var cssH = Math.max(1, Math.floor(c.clientHeight));
+  c.width  = Math.round(cssW * dpr);
+  c.height = Math.round(cssH * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+  ctx.imageSmoothingEnabled = true;
+  return { cssW:cssW, cssH:cssH, dpr:dpr };
+}
+
 
   function resizeAll() {
     var board = document.querySelector('.board');
@@ -281,22 +283,32 @@ function drawGuide(){
 }
 
 
-  function renderTargetPreview(){
-    pctx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
-    var bb = { minX:4, minY:4, maxX:prevCanvas.width-4, maxY:prevCanvas.height-4 };
-    bb.w = bb.maxX - bb.minX; bb.h = bb.maxY - bb.minY;
+function renderTargetPreview(){
+  // Use CSS pixel size because the context is scaled with setTransform(dpr,...)
+  var cssW = Math.max(1, Math.floor(prevCanvas.clientWidth));
+  var cssH = Math.max(1, Math.floor(prevCanvas.clientHeight));
 
-    var pts = sampleShape(order[idx].gen, 140, bb);
-    pctx.beginPath();
-    for(var i=0;i<pts.length;i++){
-      var p=pts[i];
-      if(i===0) pctx.moveTo(p.x,p.y); else pctx.lineTo(p.x,p.y);
-    }
-    pctx.closePath();
-    pctx.lineWidth=2;
-    pctx.strokeStyle='#22d3ee';
-    pctx.stroke();
+  // Clear in CSS space (matches the transform)
+  pctx.clearRect(0, 0, cssW, cssH);
+
+  // Build a box in CSS pixels with a small padding
+  var bb = { minX:4, minY:4, maxX:cssW-4, maxY:cssH-4 };
+  bb.w = bb.maxX - bb.minX; bb.h = bb.maxY - bb.minY;
+
+  var pts = sampleShape(order[idx].gen, 140, bb);
+
+  pctx.beginPath();
+  for (var i=0;i<pts.length;i++){
+    var p = pts[i];
+    if (i===0) pctx.moveTo(p.x, p.y);
+    else pctx.lineTo(p.x, p.y);
   }
+  pctx.closePath();
+  pctx.lineWidth = 2;
+  pctx.strokeStyle = '#22d3ee';
+  pctx.stroke();
+}
+
 
   function startDraw(e){
     if(e) e.preventDefault();
