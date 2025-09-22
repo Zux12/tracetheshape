@@ -6,90 +6,122 @@
 <title>Dumb Draw — Shape Rush</title>
 <style>
   :root{
-    --bg:#f7fbff;
-    --card:#ffffff;
-    --ink:#0b1630;
-    --muted:#5b6b8b;
-    --accent:#08b3a6;
-    --accent2:#ff7ac3;
-    --good:#16a34a;
-    --warn:#d97706;
-    --bad:#ef4444;
-    --sky1:#e8f5ff; --sky2:#c9efff; --sky3:#fffcee;
+    --bg1:#f0f9ff; --bg2:#fffef6;
+    --card:#ffffff; --ink:#0f172a; --muted:#55718d;
+    --accent:#0ea5e9; --good:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+    --border:#dbeafe;
   }
-  html,body{margin:0;height:100%;background:linear-gradient(180deg,var(--sky1),var(--sky2) 50%,var(--sky3));color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;}
-  .wrap{max-width:560px;margin:0 auto;padding:14px 14px 28px;}
-  h1{font-size:22px;margin:8px 0 10px;text-align:center;font-weight:900;letter-spacing:.2px}
-  .hud{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border:1px solid #e6eef9;border-radius:16px;padding:10px 12px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+  html,body{margin:0;height:100%;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+  .wrap{max-width:560px;margin:0 auto;padding:14px 14px 28px}
+
+  h1{font-size:22px;margin:10px 0 8px;text-align:center}
+  .hud{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border:2px solid var(--border);border-radius:16px;padding:10px 12px;box-shadow:0 6px 18px rgba(14,165,233,.15)}
   .hud small{color:var(--muted);display:block}
   .score{font-weight:800}
-  .preview{position:relative;width:72px;height:72px;border-radius:12px;background:#f2fbff;border:1px solid #e6eef9;display:grid;place-items:center}
-  .preview canvas{width:60px;height:60px}
-  .board{margin-top:12px;background:#f2fbff;border:1px solid #e6eef9;border-radius:20px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.06)}
-  #draw{width:100%;touch-action:none;display:block;background:
-    radial-gradient(800px 400px at 50% -20%, #ffffff 0%, #f2fbff 65%),
-    linear-gradient(180deg, #e8f5ff 0%, #eaf8ff 60%, #fff 100%)}
-  .btns{display:flex;gap:8px;margin-top:10px}
-  button{flex:1;background:#fff;color:var(--ink);border:1px solid #e1e9f6;border-radius:12px;padding:10px;font-weight:700}
+  .row{display:flex;gap:16px}
+  .row > div{min-width:0}
+
+  .preview{position:relative;width:76px;height:76px;border-radius:12px;background:#f1f5f9;border:2px solid var(--border);display:grid;place-items:center}
+  .preview canvas{width:64px;height:64px}
+
+  .board{margin-top:12px;background:var(--card);border:2px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(14,165,233,.12)}
+  #draw{width:100%;touch-action:none;display:block;background:radial-gradient(1000px 420px at 50% -120px,#e0f2fe 0%,#ffffff 70%)}
+
+  .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  button{flex:1;background:#fff;color:var(--ink);border:2px solid var(--border);border-radius:12px;padding:12px 10px;font-weight:700}
   button:active{transform:translateY(1px)}
-  .btn-accent{background:var(--accent);color:white;border-color:var(--accent)}
-  .btn-outline{background:#fff;color:var(--accent);border-color:var(--accent)}
+  .accent{border-color:var(--accent);box-shadow:0 0 0 3px rgba(14,165,233,.15)}
+  .success{border-color:var(--good)}
+  .wa{border-color:#25D366}
+
   .toast{text-align:center;margin-top:8px;color:var(--muted);min-height:18px}
-  .finalCenter{
-    position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-    background:rgba(0,0,0,.25);backdrop-filter:saturate(120%) blur(2px);z-index:20;
-  }
-  .finalCard{
-    width:min(92vw,520px);background:var(--card);border:1px solid #e6eef9;border-radius:20px;
-    padding:18px;box-shadow:0 10px 28px rgba(0,0,0,.18);text-align:center;
-  }
-  .finalTitle{font-size:30px;font-weight:900;margin:4px 0 6px}
-  .finalScore{font-size:22px;font-weight:800;margin:6px 0}
-  .rank{font-size:18px;font-weight:800;margin:2px 0 10px}
-  .finalBtns{display:flex;gap:10px;margin-top:10px}
-  .legend{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
 
-  /* Start Modal */
-  .startOverlay{
-    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(240,252,255,.9));
-    z-index:30;
-  }
-  .startCard{
-    width:min(92vw,520px);background:var(--card);border:1px solid #e6eef9;border-radius:24px;
-    padding:20px;box-shadow:0 10px 28px rgba(0,0,0,.15);text-align:center;
-  }
-  .startTitle{font-size:28px;font-weight:900;margin:6px 0 4px}
-  .worm{font-size:42px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.08))}
-  .best{font-size:14px;color:var(--muted);margin-top:4px}
-  .howto{font-size:14px;color:#2b3b5b;margin:10px auto 0;line-height:1.5;background:#f7fdff;border:1px dashed #cfe8ff;border-radius:12px;padding:10px;max-width:440px}
-  .timerTag{font-weight:800;color:#ff3d8b}
-  .playRow{display:flex;gap:10px;margin-top:12px;justify-content:center}
-  .pill{display:inline-block;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid #e1e9f6;font-weight:800}
-  .pill.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .pill.ghost{background:#fff;color:var(--accent);border-color:var(--accent)}
+  /* Overlays */
+  .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg,#ffffffcc,#fff8eacc);backdrop-filter:blur(2px);z-index:20;padding:20px}
+  .overlay.show{display:flex}
+  .panel{max-width:560px;width:92%;background:var(--card);border:2px solid var(--border);border-radius:18px;padding:20px 18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+  .title{font-size:26px;font-weight:900;margin:4px 0 10px}
+  .worm{font-size:42px}
+  .subtitle{color:var(--muted);margin-bottom:10px}
+  .inst{background:#f8fafc;border:2px dashed var(--border);border-radius:12px;padding:10px 12px;text-align:left;margin:10px 0}
+  .inst li{margin:6px 0}
+  .panel .btns{margin-top:10px}
+  .panel .scoreline{font-size:28px;font-weight:900;margin-top:6px}
+  .panel .rank{font-size:18px;font-weight:800;margin-top:4px}
 
-  /* HUD timer pill */
-  .timePill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3c4;border:1px solid #ffe08b;font-weight:800;color:#a16207}
+  .timer{font-weight:800}
+  .timebar{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:6px}
+  .timefill{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#fde047,#f97316,#ef4444);transition:width .1s linear}
 </style>
 </head>
 <body>
+  <!-- START OVERLAY -->
+  <div id="startOverlay" class="overlay show">
+    <div class="panel">
+      <div class="worm">🪱</div>
+      <div class="title">Dumb Draw — Shape Rush</div>
+      <div class="subtitle">Happy doodles. Silly shapes. Beat your best!</div>
+      <ul class="inst">
+        <li>Draw the tiny <b>preview shape</b> in the top-right.</li>
+        <li>You have <b>10 seconds</b> per shape. 5 shapes per game.</li>
+        <li>Lift your finger/pen to submit your drawing.</li>
+        <li>Score = similarity. Close the loop for bonus points.</li>
+      </ul>
+      <div class="btns">
+        <button id="playBtn" class="accent">▶️ Play</button>
+      </div>
+      <div style="margin-top:8px;color:var(--muted)">Best score so far: <b id="bestAtStart">0</b></div>
+    </div>
+  </div>
+
+  <!-- GAME OVER OVERLAY -->
+  <div id="overOverlay" class="overlay">
+    <div class="panel">
+      <div class="worm">🪱</div>
+      <div class="title">GAME OVER!</div>
+      <div class="scoreline" id="finalScoreBig">Total: 0</div>
+      <div class="rank" id="finalRankBig">Rank: Worm Doodler 🪱</div>
+      <div style="margin-top:6px;color:var(--muted)">Best: <b id="bestScoreBig">0</b></div>
+      <div class="btns">
+        <button id="overShareBtn" class="wa">Share on WhatsApp</button>
+        <button id="overRestartBtn" class="accent">🔁 Restart</button>
+      </div>
+    </div>
+  </div>
+
   <div class="wrap">
-    <h1>🎨 Dumb Draw — Shape Rush</h1>
+    <h1>🌟 Dumb Draw — Shape Rush</h1>
 
     <div class="hud">
-      <div>
-        <div><small>Round</small><span id="round">–</span></div>
-        <div class="score"><small>Last Score</small><span id="lastScore">–</span></div>
+      <div class="row" style="flex:1">
+        <div>
+          <small>Round</small>
+          <span id="round">– / 5</span>
+        </div>
+        <div>
+          <small>Time</small>
+          <span id="timeLeft" class="timer">10.0s</span>
+          <div class="timebar"><div id="timeFill" class="timefill" style="width:100%"></div></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="score">
+          <small>Last</small>
+          <span id="lastScore">–</span>
+        </div>
+        <div>
+          <small>Total</small>
+          <span id="totalScore">0</span>
+        </div>
+        <div>
+          <small>Best</small>
+          <span id="bestScore">0</span>
+        </div>
       </div>
       <div>
-        <div><small>Total</small><span id="totalScore">0</span></div>
-        <div><small>Shape</small><span id="shapeName">–</span></div>
+        <div><small>Shape</small><span id="shapeName">—</span></div>
       </div>
-      <div>
-        <div><small>Time</small> <span class="timePill" id="timePill">10s</span></div>
-        <div class="preview"><canvas id="preview"></canvas></div>
-      </div>
+      <div class="preview"><canvas id="preview"></canvas></div>
     </div>
 
     <div class="board">
@@ -99,43 +131,10 @@
     <div class="btns">
       <button id="clearBtn">Clear</button>
       <button id="skipBtn">Skip</button>
-      <button id="restartBtn" style="display:none;">Restart</button>
-      <button id="shareBtn" disabled>Share on WhatsApp</button>
+      <button id="restartBtn">Restart</button>
+      <button id="shareBtn" class="wa" disabled>Share on WhatsApp</button>
     </div>
-    <div class="toast" id="toast">Draw the shape shown, lift to submit. You have <b>10 seconds</b> per shape!</div>
-  </div>
-
-  <!-- Final centered overlay -->
-  <div class="finalCenter" id="finalOverlay">
-    <div class="finalCard">
-      <div class="finalTitle">🎉 Game Over!</div>
-      <div class="finalScore" id="finalScore">Total: 0</div>
-      <div class="rank" id="finalRank">Rank: Worm Doodler 🪱</div>
-      <div class="best" id="bestLine">Best: 0</div>
-      <div class="finalBtns">
-        <button id="finalShare" class="btn-accent" style="flex:1">Share on WhatsApp</button>
-        <button id="finalRestart" class="btn-outline" style="flex:1">Restart</button>
-      </div>
-      <div class="legend">Tip: faster lines, cleaner loops = higher points!</div>
-    </div>
-  </div>
-
-  <!-- Start overlay -->
-  <div class="startOverlay" id="startOverlay">
-    <div class="startCard">
-      <div class="worm">🪱</div>
-      <div class="startTitle">Dumb Draw — Shape Rush</div>
-      <div class="best" id="bestAtStart">Best: 0</div>
-      <div class="howto">
-        Draw the tiny <b>target shape</b> (top-right) on the board.<br/>
-        <span class="timerTag">You have 10 seconds per shape.</span> Score is based on how closely your line matches!
-      </div>
-      <div class="playRow">
-        <button id="playBtn" class="pill accent">▶ Play</button>
-        <span class="pill">5 shapes</span>
-        <span class="pill ghost">Tap / Drag & Release</span>
-      </div>
-    </div>
+    <div class="toast" id="toast">Press <b>Play</b> to start. Draw the shape and lift to submit.</div>
   </div>
 
 <script>
@@ -149,30 +148,44 @@
   var pctx = prevCanvas.getContext('2d');
 
   var roundEl = document.getElementById('round');
+  var timeLeftEl = document.getElementById('timeLeft');
+  var timeFillEl = document.getElementById('timeFill');
   var lastScoreEl = document.getElementById('lastScore');
   var totalScoreEl = document.getElementById('totalScore');
+  var bestScoreEl  = document.getElementById('bestScore');
   var shapeNameEl = document.getElementById('shapeName');
   var toast = document.getElementById('toast');
-  var timePill = document.getElementById('timePill');
+
+  var startOverlay = document.getElementById('startOverlay');
+  var playBtn = document.getElementById('playBtn');
+  var bestAtStart = document.getElementById('bestAtStart');
+
+  var overOverlay = document.getElementById('overOverlay');
+  var finalScoreBig = document.getElementById('finalScoreBig');
+  var finalRankBig = document.getElementById('finalRankBig');
+  var bestScoreBig = document.getElementById('bestScoreBig');
+  var overShareBtn = document.getElementById('overShareBtn');
+  var overRestartBtn = document.getElementById('overRestartBtn');
 
   var clearBtn = document.getElementById('clearBtn');
   var skipBtn = document.getElementById('skipBtn');
   var restartBtn = document.getElementById('restartBtn');
   var shareBtn = document.getElementById('shareBtn');
 
-  var finalOverlay = document.getElementById('finalOverlay');
-  var finalScore = document.getElementById('finalScore');
-  var finalRank = document.getElementById('finalRank');
-  var bestLine = document.getElementById('bestLine');
-  var finalShare = document.getElementById('finalShare');
-  var finalRestart = document.getElementById('finalRestart');
-
-  var startOverlay = document.getElementById('startOverlay');
-  var playBtn = document.getElementById('playBtn');
-  var bestAtStart = document.getElementById('bestAtStart');
-
-  // Board box (filled during resize)
+  // ===== State =====
   var boardBox = {minX:0,minY:0,maxX:0,maxY:0,w:0,h:0};
+  var ROUNDS = 5;
+  var ROUND_TIME_MS = 10000;
+  var order = [];
+  var idx = 0;
+  var total = 0;
+  var best = Number(localStorage.getItem('dd_best')||0);
+  var drawing=false, stroke=[];
+  var state = 'start'; // 'start' | 'playing' | 'gameover'
+  var timerId = null, deadline = 0, roundActive=false;
+
+  bestScoreEl.textContent = String(best);
+  bestAtStart.textContent = String(best);
 
   // ===== Utils =====
   function lerp(a,b,t){ return a + (b-a)*t; }
@@ -239,7 +252,7 @@
     return sum/A.length;
   }
 
-  // ===== Shapes (normalized 0..1) =====
+  // ===== Shapes =====
   function shapeCircle(t){ var a=2*Math.PI*t; return {x:0.5+0.42*Math.cos(a), y:0.5+0.42*Math.sin(a)}; }
   function shapeSquare(t){
     var p=t*4;
@@ -269,7 +282,6 @@
     var y=0.5 - 0.26*( 13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a) )/13;
     return {x:x,y:y};
   }
-
   var SHAPES = [
     {name:"Circle", gen:shapeCircle},
     {name:"Square", gen:shapeSquare},
@@ -289,14 +301,13 @@
     ctx.imageSmoothingEnabled = true;
     return { cssW:cssW, cssH:cssH, dpr:dpr };
   }
-
   function resizeAll() {
     var board = document.querySelector('.board');
     var cssSize = Math.floor(board.clientWidth);
     canvas.style.width = cssSize + 'px';
     canvas.style.height = cssSize + 'px';
 
-    var prevSize = 60;
+    var prevSize = 64;
     prevCanvas.style.width = prevSize + 'px';
     prevCanvas.style.height = prevSize + 'px';
 
@@ -311,12 +322,11 @@
     boardBox.w = boardBox.maxX - boardBox.minX;
     boardBox.h = boardBox.maxY - boardBox.minY;
 
-    if (order && order.length) {
+    if (state==='playing' && order.length) {
       clearCanvas();
       renderTargetPreview();
     }
   }
-
   window.addEventListener('resize', resizeAll);
   window.addEventListener('orientationchange', resizeAll);
 
@@ -327,9 +337,266 @@
     var y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
     return { x:x, y:y };
   }
+  function startDraw(e){
+    if(state!=='playing' || !roundActive) return;
+    if(e) e.preventDefault();
+    drawing=true; stroke=[];
+    var p=getPos(e); stroke.push(p);
+  }
+  function moveDraw(e){
+    if(state!=='playing' || !roundActive || !drawing) return;
+    var p=getPos(e); stroke.push(p);
+    var a=stroke[stroke.length-2], b=stroke[stroke.length-1];
+    ctx.strokeStyle='#0f172a';
+    ctx.lineWidth=3;
+    ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  }
+  function endDraw(){
+    if(state!=='playing' || !roundActive || !drawing) return;
+    drawing=false;
+    submitStroke(); // will stop timer inside
+  }
 
-  var rounds = 5, order = [], idx = 0, total = 0;
-  var drawing = false, stroke = [];
-  var roundTime = 10; // seconds
-  var timeLeft = roundTime;
-  var timerId
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', moveDraw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
+
+  // ===== Rendering =====
+  function sampleShape(gen, n, box){
+    var pts=new Array(n);
+    for(var i=0;i<n;i++){
+      var t=i/(n-1);
+      var p=gen(t);
+      pts[i]={ x: lerp(box.minX, box.maxX, p.x), y: lerp(box.minY, box.maxY, p.y) };
+    }
+    return pts;
+  }
+  function renderHUD(){
+    roundEl.textContent=(idx+1)+" / "+ROUNDS;
+    shapeNameEl.textContent = order[idx].name;
+  }
+  function clearCanvas(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawGuide();
+  }
+  function drawGuide(){
+    if (!order.length || !order[idx]) return;
+    ctx.save();
+    ctx.lineWidth=1.5;
+    ctx.strokeStyle='#bae6fd';
+    ctx.strokeRect(boardBox.minX,boardBox.minY,boardBox.w,boardBox.h);
+
+    var pts = sampleShape(order[idx].gen, 240, boardBox);
+    ctx.beginPath();
+    for(var i=0;i<pts.length;i++){
+      var p=pts[i];
+      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+    }
+    ctx.closePath();
+    ctx.globalAlpha=0.2;
+    ctx.strokeStyle= '#60a5fa';
+    ctx.stroke();
+    ctx.restore();
+  }
+  function renderTargetPreview(){
+    var cssW = Math.max(1, Math.floor(prevCanvas.clientWidth));
+    var cssH = Math.max(1, Math.floor(prevCanvas.clientHeight));
+    pctx.clearRect(0, 0, cssW, cssH);
+    if (!order.length) return;
+    var bb = { minX:4, minY:4, maxX:cssW-4, maxY:cssH-4 };
+    bb.w = bb.maxX - bb.minX; bb.h = bb.maxY - bb.minY;
+    var pts = sampleShape(order[idx].gen, 140, bb);
+    pctx.beginPath();
+    for (var i=0;i<pts.length;i++){
+      var p = pts[i];
+      if (i===0) pctx.moveTo(p.x, p.y);
+      else pctx.lineTo(p.x, p.y);
+    }
+    pctx.closePath();
+    pctx.lineWidth = 2;
+    pctx.strokeStyle = '#0ea5e9';
+    pctx.stroke();
+  }
+
+  // ===== Scoring =====
+  function scoreAgainst(targetPts, userPtsRaw){
+    if (userPtsRaw.length<8) return 0;
+    var userRes = resample(userPtsRaw.slice(), 220);
+    var user = normalizeToBox(userRes, boardBox, 6);
+    var avgD = nearestAvgDistance(targetPts, user);
+    var tol = Math.min(boardBox.w, boardBox.h) * 0.02;
+    var coverage = Math.exp(-avgD / tol);
+    var tLen = polylineLength(targetPts);
+    var uLen = polylineLength(user);
+    var lenErr = Math.abs(uLen - tLen) / (tLen||1);
+    var lenFactor = Math.exp(-1.2*lenErr);
+    var closeGap = dist(user[0], user[user.length-1]) / (tLen||1);
+    var closeFactor = Math.exp(-6*closeGap);
+    var raw = 100 * (0.65*coverage + 0.20*lenFactor + 0.15*closeFactor);
+    var s = Math.round(clamp(raw, 0, 100));
+    return s;
+  }
+
+  // ===== Timer =====
+  function startTimer(){
+    stopTimer();
+    deadline = performance.now() + ROUND_TIME_MS;
+    roundActive = true;
+    tick(); // immediate paint
+    timerId = setInterval(tick, 100);
+  }
+  function stopTimer(){
+    if(timerId){ clearInterval(timerId); timerId=null; }
+  }
+  function tick(){
+    var now = performance.now();
+    var rem = Math.max(0, deadline - now);
+    var seconds = (rem/1000).toFixed(1);
+    timeLeftEl.textContent = seconds + 's';
+    var pct = Math.max(0, Math.min(1, rem/ROUND_TIME_MS));
+    timeFillEl.style.width = (pct*100)+'%';
+    if (rem<=0) timeUp();
+  }
+  function timeUp(){
+    if(!roundActive) return;
+    roundActive=false;
+    stopTimer();
+    // score zero on timeout
+    var s = 0;
+    total += s;
+    lastScoreEl.textContent = String(s);
+    totalScoreEl.textContent = String(total);
+    toast.textContent = '⏳ Time up! 0 points.';
+    advance();
+  }
+
+  // ===== Game flow =====
+  function pickOrder(){
+    var pool = SHAPES.concat(SHAPES);
+    order = [];
+    for(var i=0;i<ROUNDS;i++){
+      order.push( pool[Math.floor(Math.random()*pool.length)] );
+    }
+    idx=0; total=0;
+    lastScoreEl.textContent='–';
+    totalScoreEl.textContent='0';
+    renderHUD();
+    renderTargetPreview();
+  }
+
+  function startRound(){
+    renderHUD();
+    clearCanvas();
+    renderTargetPreview();
+    toast.textContent = 'Draw the shape and lift to submit.';
+    startTimer();
+  }
+
+  function submitStroke(){
+    if(!roundActive) return;
+    roundActive=false;
+    stopTimer();
+    var target = sampleShape(order[idx].gen, 240, boardBox);
+    var s = scoreAgainst(target, stroke);
+    total += s;
+    lastScoreEl.textContent = String(s);
+    totalScoreEl.textContent = String(total);
+    var c = (s>=85? '#16a34a' : (s>=60? '#f59e0b' : '#ef4444'));
+    toast.innerHTML = 'Shape scored <b style="color:'+c+'">'+s+'</b>/100';
+    advance();
+  }
+
+  function advance(){
+    idx++;
+    if (idx>=ROUNDS){ finishGame(); }
+    else { startRound(); }
+  }
+
+  function finishGame(){
+    state='gameover';
+    stopTimer();
+    roundActive=false;
+    // Save best
+    if (total>best){ best=total; localStorage.setItem('dd_best', String(best)); }
+    bestScoreEl.textContent = String(best);
+    bestScoreBig.textContent = String(best);
+
+    var rank = (total>=430)? 'Circle Master 🎯' :
+               (total>=360)? 'Egg Drawer 🥚' :
+               (total>=280)? 'Potato Artist 🥔' :
+               (total>=200)? 'Oval Enjoyer 🥚➡️⭕' : 'Worm Doodler 🪱';
+
+    finalScoreBig.textContent = 'Total: ' + total;
+    finalRankBig.textContent  = 'Rank: ' + rank;
+
+    // enable share buttons
+    shareBtn.disabled = false;
+    shareBtn.onclick = function(){ shareScore(total, rank); };
+    overShareBtn.onclick = function(){ shareScore(total, rank); };
+
+    // show overlay
+    overOverlay.classList.add('show');
+    toast.textContent = 'Game over! Nice doodles.';
+  }
+
+  function startGame(){
+    state='playing';
+    shareBtn.disabled = true;
+    overOverlay.classList.remove('show');
+    startOverlay.classList.remove('show');
+    pickOrder();
+    startRound();
+  }
+
+  function restartGame(){
+    // From overlay or bottom button
+    startGame();
+  }
+
+  // ===== Share =====
+  function shareScore(total, rankText){
+    var url = location.href;
+    var msg = "I scored " + total + "/500 in Dumb Draw — Shape Rush! " +
+              "Rank: " + rankText + "  Play: " + url;
+    if (navigator.share) {
+      navigator.share({ text: msg, url: url }).catch(function(){});
+    } else {
+      var wa = "https://wa.me/?text=" + encodeURIComponent(msg);
+      window.open(wa, "_blank");
+    }
+  }
+
+  // ===== Buttons =====
+  clearBtn.onclick = function(){
+    if(state!=='playing') return;
+    stroke=[]; clearCanvas(); toast.textContent='Cleared. Draw again.';
+  };
+  skipBtn.onclick = function(){
+    if(state!=='playing' || !roundActive) return;
+    roundActive=false; stopTimer();
+    lastScoreEl.textContent='0';
+    toast.textContent='Skipped. Next shape.';
+    advance();
+  };
+  restartBtn.onclick = function(){ restartGame(); };
+  overRestartBtn.onclick = function(){ restartGame(); };
+  playBtn.onclick = function(){ startGame(); };
+
+  // ===== Boot after DOM ready =====
+  function fitOnce(){
+    // Size canvases & show best score on start
+    resizeAll();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fitOnce);
+  } else {
+    fitOnce();
+  }
+})();
+</script>
+</body>
+</html>
